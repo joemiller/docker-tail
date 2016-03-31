@@ -6,7 +6,7 @@ output prefixed with container name and colored to improve readability.
 
 Inspired by docker-compose's log formatter.
 
-TODO: screenshot
+![screenshot](https://raw.githubusercontent.com/joemiller/docker-tail/master/docker-tail-screenshot.png)
 
 Install
 -------
