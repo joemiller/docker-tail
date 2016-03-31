@@ -1,0 +1,67 @@
+#!/bin/bash
+#
+# `tail -f` the logs of one or more docker containers, with each log line prefixed
+# with the container name and a color.
+#
+
+VERSION="0.1.0"
+
+# set of colors for output. We rotate through them and re-use.
+COLORS=("\x1b[31m" "\x1b[32m" "\x1b[33m" "\x1b[34m" "\x1b[35m")
+RESET_COLOR="\x1b[0m"
+
+# helpers
+usage() {
+  echo "Usage: $0 [-a|-v] <container1> <container2> ... <containerN>"
+  echo "  -a   All running containers."
+  echo "  -v   Print version. "
+}
+
+list_running_containers() {
+  docker ps | awk '{if(NR>1) print $NF}'
+}
+
+# main
+containers=()
+
+while getopts "hva" flag; do
+  case "$flag" in
+    h) usage; exit 0 ;;
+    v) echo "$VERSION"; exit 0 ;;
+    a) containers=($(list_running_containers)) ;;
+  esac
+done
+shift $((OPTIND-1))
+
+containers=("${containers[@]}"  "$@")
+
+if [ "${#containers[@]}" == 0 ]; then
+  echo "No containers specified, or no containers are running. Run with -h for usage."
+  exit 1
+fi
+
+# we need to trap signals and shutdown the forked `docker logs -f` procs
+shutdown(){
+  echo "Stopping"
+  trap - SIGINT SIGTERM  # reset handler to avoid loops
+  kill -TERM 0
+}
+trap shutdown SIGINT SIGTERM
+
+cnt=0
+for i in "${containers[@]}"; do
+  # pick a color from the $COLORS array
+  color_idx=$(( cnt % ${#COLORS[@]} ))
+  color="${COLORS[$color_idx]}"
+
+  # created a fixed length prefix containing the container name for each line of log output
+  line_prefix=$(printf "|%-13s | " "$i")
+
+  # fork and spawn `docker logs -f`, feeding output through sed to add our prefix and colors
+  (docker logs --tail=10 --timestamps -f "$i" 2>&1 \
+    | sed "s/^/$color$line_prefix/; s/$/$RESET_COLOR/") &
+
+  cnt=$((cnt + 1))
+done
+
+wait

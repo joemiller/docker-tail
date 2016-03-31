@@ -1,0 +1,14 @@
+machine:
+  environment:
+    PATH: $HOME/.cabal/bin/:$PATH
+
+dependencies:
+  cache_directories:
+    - "~/deps"
+    - "~/.cabal"
+  pre:
+    - make circle_deps
+
+test:
+  override:
+    - make test
