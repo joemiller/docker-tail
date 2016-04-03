@@ -77,7 +77,7 @@ TODOs
 -----
 - [x] makefile
 - [x] shellcheck tests
-- [] bats tests
-- [] circle-ci
+- [ ] bats tests
+- [x] circle-ci
 - [x] homebrew tap
 - [x] readme
